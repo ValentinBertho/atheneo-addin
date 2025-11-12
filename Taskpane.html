@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATHENEO Integration</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 100%;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .email-info {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .email-info h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #667eea;
+            margin-right: 8px;
+        }
+
+        .actions {
+            padding: 20px;
+        }
+
+        .actions h3 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .action-button {
+            width: 100%;
+            padding: 14px 20px;
+            margin-bottom: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .action-button:active {
+            transform: translateY(0);
+        }
+
+        .action-button.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .action-button.success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .action-button.info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .action-button.warning {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .action-button.secondary {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+
+        .action-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .icon {
+            font-size: 18px;
+        }
+
+        .status {
+            padding: 15px 20px;
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            margin: 15px 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        .status.success {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+            color: #2e7d32;
+        }
+
+        .status.error {
+            background: #ffebee;
+            border-left-color: #f44336;
+            color: #c62828;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loader {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .attachments-count {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔷 ATHENEO</h1>
+            <p>Intégration ERP</p>
+        </div>
+
+        <div class="email-info">
+            <h3>Informations du mail</h3>
+            <div class="info-item">
+                <span class="info-label">De:</span>
+                <span id="emailFrom">Chargement...</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Sujet:</span>
+                <span id="emailSubject">Chargement...</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Pièces jointes:</span>
+                <span id="attachmentsCount">0</span>
+            </div>
+        </div>
+
+        <div id="statusMessage" class="status"></div>
+
+        <div class="actions">
+            <h3>Actions ATHENEO</h3>
+            
+            <button class="action-button primary" onclick="saveMail()">
+                <span class="icon">💾</span>
+                <span>Enregistrer le mail</span>
+            </button>
+
+            <button class="action-button success" onclick="createRequest()">
+                <span class="icon">📋</span>
+                <span>Créer une demande</span>
+            </button>
+
+            <button class="action-button info" onclick="viewContact()">
+                <span class="icon">👤</span>
+                <span>Consulter la fiche interlocuteur</span>
+            </button>
+
+            <button class="action-button warning" onclick="saveAttachments()">
+                <span class="icon">📎</span>
+                <span>Enregistrer les pièces jointes</span>
+            </button>
+
+            <button class="action-button secondary" onclick="createAction()">
+                <span class="icon">✅</span>
+                <span>Créer une action</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let mailboxItem;
+        let senderEmail;
+        let mailSubject;
+        let mailBody;
+        let attachments = [];
+
+        // Configuration de l'API ATHENEO
+        const ATHENEO_API_URL = 'https://votre-api-atheneo.com/api';
+        const API_KEY = 'VOTRE_CLE_API'; // À configurer
+
+        Office.onReady((info) => {
+            if (info.host === Office.HostType.Outlook) {
+                mailboxItem = Office.context.mailbox.item;
+                loadEmailData();
+            }
+        });
+
+        function loadEmailData() {
+            // Récupération de l'expéditeur
+            mailboxItem.from.getAsync((result) => {
+                if (result.status === Office.AsyncResultStatus.Succeeded) {
+                    senderEmail = result.value.emailAddress;
+                    document.getElementById('emailFrom').textContent = 
+                        `${result.value.displayName} <${senderEmail}>`;
+                }
+            });
+
+            // Récupération du sujet
+            mailSubject = mailboxItem.subject;
+            document.getElementById('emailSubject').textContent = mailSubject;
+
+            // Récupération du corps
+            mailboxItem.body.getAsync(Office.CoercionType.Html, (result) => {
+                if (result.status === Office.AsyncResultStatus.Succeeded) {
+                    mailBody = result.value;
+                }
+            });
+
+            // Récupération des pièces jointes
+            attachments = mailboxItem.attachments;
+            const attachmentText = attachments.length > 0 
+                ? `${attachments.length} fichier(s)` 
+                : 'Aucune';
+            document.getElementById('attachmentsCount').innerHTML = 
+                attachmentText + (attachments.length > 0 
+                    ? `<span class="attachments-count">${attachments.length}</span>` 
+                    : '');
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status show ${type}`;
+            
+            setTimeout(() => {
+                statusDiv.classList.remove('show');
+            }, 5000);
+        }
+
+        function showLoader(button) {
+            button.disabled = true;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<span class="loader"></span><span>Traitement...</span>';
+            return originalText;
+        }
+
+        function hideLoader(button, originalText) {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+
+        async function callAtheneoAPI(endpoint, method, data) {
+            try {
+                const response = await fetch(`${ATHENEO_API_URL}${endpoint}`, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erreur API: ${response.status}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('Erreur API ATHENEO:', error);
+                throw error;
+            }
+        }
+
+        async function saveMail() {
+            const button = event.target.closest('button');
+            const originalText = showLoader(button);
+
+            try {
+                const mailData = {
+                    from: senderEmail,
+                    subject: mailSubject,
+                    body: mailBody,
+                    date: mailboxItem.dateTimeCreated.toISOString(),
+                    messageId: mailboxItem.itemId
+                };
+
+                const result = await callAtheneoAPI('/mails', 'POST', mailData);
+                
+                showStatus('✅ Mail enregistré avec succès dans ATHENEO', 'success');
+                console.log('Mail enregistré:', result);
+            } catch (error) {
+                showStatus('❌ Erreur lors de l\'enregistrement du mail', 'error');
+                console.error(error);
+            } finally {
+                hideLoader(button, originalText);
+            }
+        }
+
+        async function createRequest() {
+            const button = event.target.closest('button');
+            const originalText = showLoader(button);
+
+            try {
+                const requestData = {
+                    email: senderEmail,
+                    subject: mailSubject,
+                    description: mailBody,
+                    source: 'outlook',
+                    date: new Date().toISOString()
+                };
+
+                const result = await callAtheneoAPI('/demandes', 'POST', requestData);
+                
+                showStatus(`✅ Demande créée avec succès (Réf: ${result.id || 'N/A'})`, 'success');
+                console.log('Demande créée:', result);
+            } catch (error) {
+                showStatus('❌ Erreur lors de la création de la demande', 'error');
+                console.error(error);
+            } finally {
+                hideLoader(button, originalText);
+            }
+        }
+
+        async function viewContact() {
+            const button = event.target.closest('button');
+            const originalText = showLoader(button);
+
+            try {
+                const result = await callAtheneoAPI(`/interlocuteurs?email=${encodeURIComponent(senderEmail)}`, 'GET', null);
+                
+                if (result && result.data) {
+                    // Ouvrir la fiche dans ATHENEO
+                    const atheneoUrl = `${ATHENEO_API_URL.replace('/api', '')}/interlocuteurs/${result.data.id}`;
+                    window.open(atheneoUrl, '_blank');
+                    showStatus('✅ Fiche interlocuteur ouverte', 'success');
+                } else {
+                    showStatus('⚠️ Aucun interlocuteur trouvé pour cet email', 'warning');
+                }
+            } catch (error) {
+                showStatus('❌ Erreur lors de la consultation de la fiche', 'error');
+                console.error(error);
+            } finally {
+                hideLoader(button, originalText);
+            }
+        }
+
+        async function saveAttachments() {
+            const button = event.target.closest('button');
+            const originalText = showLoader(button);
+
+            if (attachments.length === 0) {
+                showStatus('⚠️ Aucune pièce jointe à enregistrer', 'warning');
+                hideLoader(button, originalText);
+                return;
+            }
+
+            try {
+                const attachmentData = attachments.map(att => ({
+                    name: att.name,
+                    size: att.size,
+                    contentType: att.contentType,
+                    id: att.id,
+                    email: senderEmail,
+                    mailSubject: mailSubject
+                }));
+
+                const result = await callAtheneoAPI('/pieces-jointes', 'POST', {
+                    attachments: attachmentData,
+                    source: 'outlook'
+                });
+                
+                showStatus(`✅ ${attachments.length} pièce(s) jointe(s) enregistrée(s)`, 'success');
+                console.log('Pièces jointes enregistrées:', result);
+            } catch (error) {
+                showStatus('❌ Erreur lors de l\'enregistrement des pièces jointes', 'error');
+                console.error(error);
+            } finally {
+                hideLoader(button, originalText);
+            }
+        }
+
+        async function createAction() {
+            const button = event.target.closest('button');
+            const originalText = showLoader(button);
+
+            try {
+                const actionData = {
+                    email: senderEmail,
+                    title: `Action: ${mailSubject}`,
+                    description: mailBody,
+                    type: 'email_follow_up',
+                    priority: 'normal',
+                    date: new Date().toISOString()
+                };
+
+                const result = await callAtheneoAPI('/actions', 'POST', actionData);
+                
+                showStatus(`✅ Action créée avec succès (Réf: ${result.id || 'N/A'})`, 'success');
+                console.log('Action créée:', result);
+            } catch (error) {
+                showStatus('❌ Erreur lors de la création de l\'action', 'error');
+                console.error(error);
+            } finally {
+                hideLoader(button, originalText);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -55,7 +55,6 @@
   <!-- Règle d'activation -->
   <Rule xsi:type="RuleCollection" Mode="Or">
     <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read"/>
-    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Edit"/>
   </Rule>
   
   <!-- VersionOverrides pour interface moderne -->
@@ -104,31 +103,7 @@
           </ExtensionPoint>
           
           <!-- Point d'extension : Rédaction de message -->
-          <ExtensionPoint xsi:type="MessageComposeCommandSurface">
-            <OfficeTab id="TabDefault">
-              <Group id="atheneoComposeGroup">
-                <Label resid="GroupLabel"/>
-                
-                <!-- Bouton pour la rédaction -->
-                <Control xsi:type="Button" id="atheneoComposeButton">
-                  <Label resid="TaskpaneButton.Label"/>
-                  <Supertip>
-                    <Title resid="TaskpaneButton.Label"/>
-                    <Description resid="ComposeButton.Tooltip"/>
-                  </Supertip>
-                  <Icon>
-                    <bt:Image size="16" resid="Icon.16x16"/>
-                    <bt:Image size="32" resid="Icon.32x32"/>
-                    <bt:Image size="80" resid="Icon.80x80"/>
-                  </Icon>
-                  <Action xsi:type="ShowTaskpane">
-                    <SourceLocation resid="Taskpane.Url"/>
-                  </Action>
-                </Control>
-                
-              </Group>
-            </OfficeTab>
-          </ExtensionPoint>
+
           
         </DesktopFormFactor>
         

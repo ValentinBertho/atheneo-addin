@@ -446,7 +446,7 @@
         // CONFIGURATION API
         // ============================================
         
-		const ATHENEO_API_URL = 'https://api-demo-production-8637.up.railway.app/atheneo/api';
+        const ATHENEO_API_URL = 'https://votre-tunnel.ngrok-free.app/atheneo/api';
         const API_KEY = 'VotreCleAPISecrete123';
 
         // ============================================
@@ -460,31 +460,52 @@
             }
         });
 
-        function loadEmailData() {
-            // Récupération de l'expéditeur
-            mailboxItem.from.getAsync((result) => {
-                if (result.status === Office.AsyncResultStatus.Succeeded) {
-                    senderEmail = result.value.emailAddress;
-                    senderName = result.value.displayName;
+        async function loadEmailData() {
+            try {
+                // Récupération de l'expéditeur (Promise)
+                const fromResult = await new Promise((resolve) => {
+                    mailboxItem.from.getAsync((result) => {
+                        resolve(result);
+                    });
+                });
+
+                if (fromResult.status === Office.AsyncResultStatus.Succeeded) {
+                    senderEmail = fromResult.value.emailAddress;
+                    senderName = fromResult.value.displayName;
                     document.getElementById('emailFrom').innerHTML = 
                         `<strong>${senderName}</strong><br><span style="font-size: 12px; color: var(--text-muted);">${senderEmail}</span>`;
                 }
-            });
 
-            // Récupération du sujet
-            mailSubject = mailboxItem.subject;
-            document.getElementById('emailSubject').textContent = mailSubject || '(Aucun sujet)';
+                // Récupération du sujet (synchrone)
+                mailSubject = mailboxItem.subject || '(Aucun sujet)';
+                document.getElementById('emailSubject').textContent = mailSubject;
 
-            // Récupération du corps
-            mailboxItem.body.getAsync(Office.CoercionType.Html, (result) => {
-                if (result.status === Office.AsyncResultStatus.Succeeded) {
-                    mailBody = result.value;
+                // Récupération du corps (Promise)
+                const bodyResult = await new Promise((resolve) => {
+                    mailboxItem.body.getAsync(Office.CoercionType.Html, (result) => {
+                        resolve(result);
+                    });
+                });
+
+                if (bodyResult.status === Office.AsyncResultStatus.Succeeded) {
+                    mailBody = bodyResult.value;
                 }
-            });
 
-            // Récupération des pièces jointes
-            attachments = mailboxItem.attachments || [];
-            updateAttachmentsDisplay();
+                // Récupération des pièces jointes
+                attachments = mailboxItem.attachments || [];
+                updateAttachmentsDisplay();
+
+                console.log('✅ Données email chargées:', {
+                    from: senderEmail,
+                    fromName: senderName,
+                    subject: mailSubject,
+                    bodyLength: mailBody ? mailBody.length : 0,
+                    attachments: attachments.length
+                });
+            } catch (error) {
+                console.error('❌ Erreur chargement données email:', error);
+                showStatus('Erreur lors du chargement des données', 'error');
+            }
         }
 
         function updateAttachmentsDisplay() {

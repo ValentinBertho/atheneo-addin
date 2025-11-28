@@ -262,6 +262,26 @@
             gap: 12px;
             background: var(--surface);
             color: var(--text-primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .action-button:hover::before {
+            width: 300px;
+            height: 300px;
         }
 
         .action-button:hover:not(:disabled) {
@@ -278,6 +298,11 @@
         .action-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+        }
+
+        .action-button:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
         }
 
         .action-button.primary {
@@ -301,6 +326,16 @@
         .button-text {
             flex: 1;
             text-align: left;
+            position: relative;
+            z-index: 1;
+        }
+
+        .button-description {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: block;
+            margin-top: 2px;
+            font-weight: 400;
         }
 
         .loader {
@@ -314,6 +349,127 @@
 
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-8px);
+            padding: 6px 12px;
+            background: var(--bg-darker);
+            color: var(--text-primary);
+            font-size: 12px;
+            border-radius: 6px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+        }
+
+        .tooltip:hover::after {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-4px);
+        }
+
+        /* Badge de notification */
+        .notification-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: var(--error);
+            color: white;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: 600;
+            min-width: 18px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Stats rapides */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            padding: 16px 24px;
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stat-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .stat-item:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(139, 92, 246, 0.2);
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-light);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        /* Section collapsible améliorée */
+        .section-collapsible {
+            margin: 16px 24px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--surface);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .section-header:hover {
+            background: var(--surface-hover);
+        }
+
+        .section-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            padding: 0 16px;
+        }
+
+        .section-content.expanded {
+            max-height: 500px;
+            padding: 16px;
         }
 
         /* Footer */
@@ -394,33 +550,64 @@
             <span id="statusText"></span>
         </div>
 
+        <!-- Stats rapides -->
+        <div class="quick-stats" id="quickStats" style="display: none;">
+            <div class="stat-item tooltip" data-tooltip="Mails enregistrés aujourd'hui">
+                <span class="stat-value" id="statMails">0</span>
+                <span class="stat-label">Mails</span>
+            </div>
+            <div class="stat-item tooltip" data-tooltip="Demandes créées ce mois">
+                <span class="stat-value" id="statRequests">0</span>
+                <span class="stat-label">Demandes</span>
+            </div>
+            <div class="stat-item tooltip" data-tooltip="Actions en cours">
+                <span class="stat-value" id="statActions">0</span>
+                <span class="stat-label">Actions</span>
+            </div>
+        </div>
+
         <!-- Actions principales -->
         <div class="actions">
             <div class="actions-title">Actions disponibles</div>
-            
-            <button class="action-button primary" onclick="saveMail()">
+
+            <button class="action-button primary tooltip" data-tooltip="Sauvegarder ce mail dans ATHENEO" onclick="saveMail()">
                 <span class="button-icon">💾</span>
-                <span class="button-text">Enregistrer le mail</span>
+                <span class="button-text">
+                    Enregistrer le mail
+                    <span class="button-description">Archiver dans la base ATHENEO</span>
+                </span>
             </button>
 
-            <button class="action-button" onclick="createRequest()">
+            <button class="action-button tooltip" data-tooltip="Créer une nouvelle demande client" onclick="createRequest()">
                 <span class="button-icon">📋</span>
-                <span class="button-text">Créer une demande</span>
+                <span class="button-text">
+                    Créer une demande
+                    <span class="button-description">Générer une demande avec référence</span>
+                </span>
             </button>
 
-            <button class="action-button" onclick="viewContact()">
+            <button class="action-button tooltip" data-tooltip="Voir la fiche contact de l'expéditeur" onclick="viewContact()">
                 <span class="button-icon">👤</span>
-                <span class="button-text">Consulter le contact</span>
+                <span class="button-text">
+                    Consulter le contact
+                    <span class="button-description">Ouvrir la fiche interlocuteur</span>
+                </span>
             </button>
 
-            <button class="action-button" onclick="saveAttachments()">
+            <button class="action-button tooltip" data-tooltip="Enregistrer toutes les pièces jointes" onclick="saveAttachments()" id="attachmentsButton">
                 <span class="button-icon">📎</span>
-                <span class="button-text">Sauvegarder les pièces jointes</span>
+                <span class="button-text">
+                    Sauvegarder les pièces jointes
+                    <span class="button-description">Archiver les documents attachés</span>
+                </span>
             </button>
 
-            <button class="action-button" onclick="createAction()">
+            <button class="action-button tooltip" data-tooltip="Créer une tâche de suivi dans ATHENEO" onclick="createAction()">
                 <span class="button-icon">✓</span>
-                <span class="button-text">Créer une action de suivi</span>
+                <span class="button-text">
+                    Créer une action de suivi
+                    <span class="button-description">Planifier une action ultérieure</span>
+                </span>
             </button>
         </div>
 
@@ -517,15 +704,24 @@
 
         function updateAttachmentsDisplay() {
             const count = attachments.length;
-            
+
             // Badge dans le titre
             document.getElementById('attachmentsBadge').textContent = count;
-            
+
+            // Désactiver/activer le bouton de sauvegarde
+            const attachButton = document.getElementById('attachmentsButton');
+            if (attachButton) {
+                attachButton.disabled = count === 0;
+                if (count > 0) {
+                    attachButton.classList.add('has-attachments');
+                }
+            }
+
             // Détails des pièces jointes
             if (count === 0) {
                 document.getElementById('attachmentsDetails').textContent = 'Aucune pièce jointe';
             } else {
-                const filesText = attachments.map(att => 
+                const filesText = attachments.map(att =>
                     `📄 ${att.name} (${formatFileSize(att.size)})`
                 ).join('<br>');
                 document.getElementById('attachmentsDetails').innerHTML = filesText;
@@ -594,40 +790,71 @@
         // ============================================
         // APPELS API VERS SPRING BOOT
         // ============================================
-        
-        async function callAtheneoAPI(endpoint, method, data) {
-            try {
-                console.log(`API Call: ${method} ${endpoint}`);
-                console.log('Data:', data);
 
-                const options = {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${API_KEY}`
+        async function callAtheneoAPI(endpoint, method, data, retries = 2) {
+            let lastError;
+
+            for (let attempt = 0; attempt <= retries; attempt++) {
+                try {
+                    console.log(`API Call [Attempt ${attempt + 1}/${retries + 1}]: ${method} ${endpoint}`);
+                    console.log('Data:', data);
+
+                    const options = {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${API_KEY}`
+                        },
+                        timeout: 10000
+                    };
+
+                    if (data && method !== 'GET') {
+                        options.body = JSON.stringify(data);
                     }
-                };
 
-                if (data && method !== 'GET') {
-                    options.body = JSON.stringify(data);
+                    const response = await fetch(`${ATHENEO_API_URL}${endpoint}`, options);
+
+                    console.log('Response status:', response.status);
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText || 'Erreur API'}`);
+                    }
+
+                    const result = await response.json();
+                    console.log('Response:', result);
+
+                    return result;
+                } catch (error) {
+                    console.error(`API Error (attempt ${attempt + 1}):`, error);
+                    lastError = error;
+
+                    // Retry only for network errors, not for 4xx errors
+                    if (attempt < retries && !error.message.includes('HTTP 4')) {
+                        console.log(`Retrying in ${(attempt + 1) * 1000}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, (attempt + 1) * 1000));
+                    } else {
+                        break;
+                    }
                 }
-
-                const response = await fetch(`${ATHENEO_API_URL}${endpoint}`, options);
-                
-                console.log('Response status:', response.status);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const result = await response.json();
-                console.log('Response:', result);
-                
-                return result;
-            } catch (error) {
-                console.error('API Error:', error);
-                throw error;
             }
+
+            throw lastError;
+        }
+
+        // Validation des données
+        function validateEmailData() {
+            const errors = [];
+
+            if (!senderEmail || !senderEmail.includes('@')) {
+                errors.push('Email expéditeur invalide');
+            }
+
+            if (!mailSubject || mailSubject.trim() === '') {
+                errors.push('Sujet du mail manquant');
+            }
+
+            return errors;
         }
 
         // ============================================
@@ -636,6 +863,14 @@
         
         async function saveMail() {
             const button = event.target.closest('button');
+
+            // Validation
+            const errors = validateEmailData();
+            if (errors.length > 0) {
+                showStatus(`Validation échouée: ${errors.join(', ')}`, 'error');
+                return;
+            }
+
             const originalHTML = showLoader(button);
 
             try {
@@ -647,14 +882,15 @@
                     date: mailboxItem.dateTimeCreated.toISOString(),
                     messageId: mailboxItem.itemId
                 });
-                
+
                 if (result.success) {
-                    showStatus(`Mail enregistré (ID: ${result.data.id})`, 'success');
+                    showStatus(`✓ Mail enregistré avec succès (ID: ${result.data.id})`, 'success');
                 } else {
-                    showStatus(result.message, 'error');
+                    showStatus(result.message || 'Échec de l\'enregistrement', 'error');
                 }
             } catch (error) {
-                showStatus('Erreur lors de l\'enregistrement', 'error');
+                console.error('Error in saveMail:', error);
+                showStatus(`✕ Erreur: ${error.message || 'Impossible d\'enregistrer le mail'}`, 'error');
             } finally {
                 hideLoader(button, originalHTML);
             }
@@ -662,6 +898,14 @@
 
         async function createRequest() {
             const button = event.target.closest('button');
+
+            // Validation
+            const errors = validateEmailData();
+            if (errors.length > 0) {
+                showStatus(`Validation échouée: ${errors.join(', ')}`, 'error');
+                return;
+            }
+
             const originalHTML = showLoader(button);
 
             try {
@@ -674,14 +918,15 @@
                     priority: 'normale',
                     type: 'email'
                 });
-                
+
                 if (result.success) {
-                    showStatus(`Demande créée: ${result.data.reference}`, 'success');
+                    showStatus(`✓ Demande créée avec succès: ${result.data.reference}`, 'success');
                 } else {
-                    showStatus(result.message, 'error');
+                    showStatus(result.message || 'Échec de la création', 'error');
                 }
             } catch (error) {
-                showStatus('Erreur lors de la création', 'error');
+                console.error('Error in createRequest:', error);
+                showStatus(`✕ Erreur: ${error.message || 'Impossible de créer la demande'}`, 'error');
             } finally {
                 hideLoader(button, originalHTML);
             }
@@ -689,23 +934,30 @@
 
         async function viewContact() {
             const button = event.target.closest('button');
+
+            if (!senderEmail || !senderEmail.includes('@')) {
+                showStatus('Email expéditeur invalide', 'error');
+                return;
+            }
+
             const originalHTML = showLoader(button);
 
             try {
                 const result = await callAtheneoAPI(
-                    `/interlocuteurs?email=${encodeURIComponent(senderEmail)}`, 
+                    `/interlocuteurs?email=${encodeURIComponent(senderEmail)}`,
                     'GET'
                 );
-                
+
                 if (result.success && result.data) {
                     const url = `${ATHENEO_API_URL.replace('/api', '')}/interlocuteurs/${result.data.id}`;
                     window.open(url, '_blank');
-                    showStatus(`Fiche de ${result.data.nom} ${result.data.prenom}`, 'success');
+                    showStatus(`✓ Fiche de ${result.data.nom} ${result.data.prenom} ouverte`, 'success');
                 } else {
-                    showStatus('Contact non trouvé', 'warning');
+                    showStatus('⚠ Contact non trouvé dans ATHENEO', 'warning');
                 }
             } catch (error) {
-                showStatus('Erreur lors de la consultation', 'error');
+                console.error('Error in viewContact:', error);
+                showStatus(`✕ Erreur: ${error.message || 'Impossible de consulter le contact'}`, 'error');
             } finally {
                 hideLoader(button, originalHTML);
             }
@@ -713,13 +965,13 @@
 
         async function saveAttachments() {
             const button = event.target.closest('button');
-            const originalHTML = showLoader(button);
 
             if (attachments.length === 0) {
-                showStatus('Aucune pièce jointe à enregistrer', 'warning');
-                hideLoader(button, originalHTML);
+                showStatus('⚠ Aucune pièce jointe à enregistrer', 'warning');
                 return;
             }
+
+            const originalHTML = showLoader(button);
 
             try {
                 const result = await callAtheneoAPI('/pieces-jointes', 'POST', {
@@ -734,14 +986,15 @@
                     emailSubject: mailSubject,
                     source: 'outlook_addin'
                 });
-                
+
                 if (result.success) {
-                    showStatus(`${attachments.length} pièce(s) jointe(s) enregistrée(s)`, 'success');
+                    showStatus(`✓ ${attachments.length} pièce(s) jointe(s) enregistrée(s) avec succès`, 'success');
                 } else {
-                    showStatus(result.message, 'error');
+                    showStatus(result.message || 'Échec de l\'enregistrement', 'error');
                 }
             } catch (error) {
-                showStatus('Erreur lors de l\'enregistrement', 'error');
+                console.error('Error in saveAttachments:', error);
+                showStatus(`✕ Erreur: ${error.message || 'Impossible d\'enregistrer les pièces jointes'}`, 'error');
             } finally {
                 hideLoader(button, originalHTML);
             }
@@ -749,6 +1002,14 @@
 
         async function createAction() {
             const button = event.target.closest('button');
+
+            // Validation
+            const errors = validateEmailData();
+            if (errors.length > 0) {
+                showStatus(`Validation échouée: ${errors.join(', ')}`, 'error');
+                return;
+            }
+
             const originalHTML = showLoader(button);
 
             try {
@@ -763,14 +1024,15 @@
                     source: 'outlook_addin',
                     dueDate: null
                 });
-                
+
                 if (result.success) {
-                    showStatus(`Action créée: ${result.data.reference}`, 'success');
+                    showStatus(`✓ Action créée avec succès: ${result.data.reference}`, 'success');
                 } else {
-                    showStatus(result.message, 'error');
+                    showStatus(result.message || 'Échec de la création', 'error');
                 }
             } catch (error) {
-                showStatus('Erreur lors de la création', 'error');
+                console.error('Error in createAction:', error);
+                showStatus(`✕ Erreur: ${error.message || 'Impossible de créer l\'action'}`, 'error');
             } finally {
                 hideLoader(button, originalHTML);
             }

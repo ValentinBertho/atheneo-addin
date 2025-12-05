@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATHENEO - Conversations</title>
+    <script src="https://res.cdn.office.net/teams-js/2.19.0/js/MicrosoftTeams.min.js" crossorigin="anonymous"></script>
+    <script src="../config.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <h1>💬 Historique des Conversations Teams</h1>
+            <p class="subtitle">Toutes vos conversations Teams synchronisées avec ATHENEO</p>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="🔍 Rechercher dans les conversations..." oninput="searchConversations()">
+                <select id="filterType" onchange="applyFilters()">
+                    <option value="">Tous les types</option>
+                    <option value="chat">Chat 1:1</option>
+                    <option value="group">Groupe</option>
+                    <option value="channel">Canal</option>
+                    <option value="meeting">Réunion</option>
+                </select>
+                <label><input type="checkbox" id="showArchived" onchange="applyFilters()"> Afficher archivées</label>
+            </div>
+        </div>
+
+        <div class="conversations-list" id="conversationsList"></div>
+
+        <!-- Modal détails conversation -->
+        <div class="modal" id="conversationModal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2 id="modalTitle">💬 Détails de la conversation</h2>
+                    <button class="btn-close" onclick="closeConversationModal()">✕</button>
+                </div>
+                <div class="conversation-details" id="conversationDetails"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let conversations = [];
+        let filteredConversations = [];
+
+        microsoftTeams.app.initialize().then(() => {
+            loadConversations();
+        });
+
+        async function loadConversations() {
+            conversations = [
+                {
+                    id: 1,
+                    type: 'chat',
+                    titre: 'Conversation avec Marie Dupont',
+                    participants: ['Marie Dupont', 'Vous'],
+                    dernierMessage: 'Merci pour votre retour, je valide le devis',
+                    date: '2025-01-28T14:30:00',
+                    messageCount: 24,
+                    fichiers: 3,
+                    statut: 'active'
+                },
+                {
+                    id: 2,
+                    type: 'group',
+                    titre: 'Équipe Projet TechCorp',
+                    participants: ['Jean Martin', 'Sophie Bernard', 'Pierre Dubois', 'Vous'],
+                    dernierMessage: 'RDV de suivi prévu vendredi 14h',
+                    date: '2025-01-28T11:15:00',
+                    messageCount: 156,
+                    fichiers: 12,
+                    statut: 'active'
+                },
+                {
+                    id: 3,
+                    type: 'channel',
+                    titre: 'Canal: Commercial - Opportunités',
+                    participants: ['15 membres'],
+                    dernierMessage: 'Nouveau lead qualifié pour Innovate SAS',
+                    date: '2025-01-27T16:45:00',
+                    messageCount: 89,
+                    fichiers: 7,
+                    statut: 'active'
+                },
+                {
+                    id: 4,
+                    type: 'meeting',
+                    titre: 'Réunion Revue Trimestrielle Q1',
+                    participants: ['Équipe Direction (8 personnes)'],
+                    dernierMessage: 'Enregistrement disponible',
+                    date: '2025-01-25T10:00:00',
+                    messageCount: 5,
+                    fichiers: 4,
+                    statut: 'archived',
+                    duree: '1h 30min'
+                },
+                {
+                    id: 5,
+                    type: 'chat',
+                    titre: 'Conversation avec Jean Martin',
+                    participants: ['Jean Martin', 'Vous'],
+                    dernierMessage: 'Envoyé le contrat mis à jour',
+                    date: '2025-01-26T09:20:00',
+                    messageCount: 42,
+                    fichiers: 8,
+                    statut: 'archived'
+                }
+            ];
+            filteredConversations = conversations.filter(c => c.statut === 'active');
+            renderConversations();
+        }
+
+        function renderConversations() {
+            const list = document.getElementById('conversationsList');
+            if (filteredConversations.length === 0) {
+                list.innerHTML = '<div class="empty-state"><p>Aucune conversation trouvée</p></div>';
+                return;
+            }
+            list.innerHTML = filteredConversations.map(conv => `
+                <div class="conversation-card" onclick="viewConversation(${conv.id})">
+                    <div class="conv-icon ${conv.type}">${getConvIcon(conv.type)}</div>
+                    <div class="conv-info">
+                        <div class="conv-header">
+                            <h3>${conv.titre}</h3>
+                            <span class="conv-date">${formatTimeAgo(conv.date)}</span>
+                        </div>
+                        <p class="conv-participants">${conv.participants.join(', ')}</p>
+                        <p class="conv-last-message">${conv.dernierMessage}</p>
+                        <div class="conv-meta">
+                            <span class="badge">💬 ${conv.messageCount} messages</span>
+                            <span class="badge">📎 ${conv.fichiers} fichiers</span>
+                            ${conv.duree ? `<span class="badge">⏱️ ${conv.duree}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="conv-actions" onclick="event.stopPropagation()">
+                        <button class="btn-icon" onclick="openInTeams(${conv.id})" title="Ouvrir dans Teams">🔗</button>
+                        <button class="btn-icon" onclick="archiveConversation(${conv.id})" title="Archiver">📦</button>
+                        <button class="btn-icon" onclick="exportConversation(${conv.id})" title="Exporter">📥</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getConvIcon(type) {
+            const icons = {
+                chat: '💬',
+                group: '👥',
+                channel: '📢',
+                meeting: '🎥'
+            };
+            return icons[type] || '💬';
+        }
+
+        function formatTimeAgo(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 60) return `Il y a ${diffMins} min`;
+            if (diffHours < 24) return `Il y a ${diffHours}h`;
+            if (diffDays === 1) return 'Hier';
+            if (diffDays < 7) return `Il y a ${diffDays} jours`;
+            return date.toLocaleDateString('fr-FR');
+        }
+
+        function searchConversations() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            filteredConversations = conversations.filter(c =>
+                c.titre.toLowerCase().includes(query) ||
+                c.dernierMessage.toLowerCase().includes(query) ||
+                c.participants.some(p => p.toLowerCase().includes(query))
+            );
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const type = document.getElementById('filterType').value;
+            const showArchived = document.getElementById('showArchived').checked;
+
+            let result = [...conversations];
+
+            if (type) result = result.filter(c => c.type === type);
+            if (!showArchived) result = result.filter(c => c.statut === 'active');
+
+            filteredConversations = result;
+            renderConversations();
+        }
+
+        function viewConversation(id) {
+            const conv = conversations.find(c => c.id === id);
+            if (!conv) return;
+
+            document.getElementById('modalTitle').textContent = conv.titre;
+            document.getElementById('conversationDetails').innerHTML = `
+                <div class="conv-detail-header">
+                    <div class="conv-detail-info">
+                        <p><strong>Type:</strong> ${conv.type}</p>
+                        <p><strong>Participants:</strong> ${conv.participants.join(', ')}</p>
+                        <p><strong>Messages:</strong> ${conv.messageCount}</p>
+                        <p><strong>Fichiers partagés:</strong> ${conv.fichiers}</p>
+                        <p><strong>Date:</strong> ${new Date(conv.date).toLocaleString('fr-FR')}</p>
+                        ${conv.duree ? `<p><strong>Durée:</strong> ${conv.duree}</p>` : ''}
+                    </div>
+                </div>
+                <div class="conv-detail-messages">
+                    <h3>Messages récents</h3>
+                    <div class="message">
+                        <div class="message-author">Marie Dupont</div>
+                        <div class="message-content">${conv.dernierMessage}</div>
+                        <div class="message-time">${formatTimeAgo(conv.date)}</div>
+                    </div>
+                    <div class="message">
+                        <div class="message-author">Vous</div>
+                        <div class="message-content">Parfait, je te renvoie la version signée</div>
+                        <div class="message-time">Il y a 2h</div>
+                    </div>
+                </div>
+                <div class="conv-detail-files">
+                    <h3>📎 Fichiers partagés</h3>
+                    <div class="file-list">
+                        <div class="file-item">📄 Contrat_TechCorp.pdf (2.4 MB)</div>
+                        <div class="file-item">📊 Presentation_Projet.pptx (5.1 MB)</div>
+                        <div class="file-item">📋 Planning.xlsx (890 KB)</div>
+                    </div>
+                </div>
+                <div class="conv-detail-actions">
+                    <button class="btn btn-primary" onclick="createActionFromConv(${id})">✓ Créer une action</button>
+                    <button class="btn btn-secondary" onclick="exportConversation(${id})">📥 Exporter en PDF</button>
+                    <button class="btn btn-secondary" onclick="openInTeams(${id})">🔗 Ouvrir dans Teams</button>
+                </div>
+            `;
+
+            document.getElementById('conversationModal').classList.add('show');
+        }
+
+        function closeConversationModal() {
+            document.getElementById('conversationModal').classList.remove('show');
+        }
+
+        function openInTeams(id) {
+            alert(`Ouverture de la conversation ${id} dans Teams`);
+        }
+
+        function archiveConversation(id) {
+            if (confirm('Archiver cette conversation ?')) {
+                const conv = conversations.find(c => c.id === id);
+                if (conv) {
+                    conv.statut = 'archived';
+                    applyFilters();
+                }
+            }
+        }
+
+        function exportConversation(id) {
+            alert(`Export de la conversation ${id} en PDF`);
+        }
+
+        function createActionFromConv(id) {
+            alert(`Création d'une action depuis la conversation ${id}`);
+            closeConversationModal();
+        }
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; padding: 24px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .page-header { background: white; padding: 24px; border-radius: 12px; margin-bottom: 24px; }
+        .page-header h1 { font-size: 24px; margin-bottom: 8px; }
+        .subtitle { color: #6b7280; font-size: 14px; margin-bottom: 16px; }
+        .search-bar { display: flex; gap: 12px; align-items: center; }
+        .search-bar input { flex: 1; padding: 12px 16px; border: 1px solid #d1d5db; border-radius: 8px; }
+        .search-bar select { padding: 12px 16px; border: 1px solid #d1d5db; border-radius: 8px; }
+        .conversations-list { display: grid; gap: 16px; }
+        .conversation-card { background: white; border-radius: 12px; padding: 20px; border: 1px solid #e5e7eb; display: flex; gap: 16px; cursor: pointer; transition: all 0.2s; }
+        .conversation-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-2px); }
+        .conv-icon { width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 32px; flex-shrink: 0; }
+        .conv-icon.chat { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
+        .conv-icon.group { background: linear-gradient(135deg, #10b981, #3b82f6); }
+        .conv-icon.channel { background: linear-gradient(135deg, #f59e0b, #ec4899); }
+        .conv-icon.meeting { background: linear-gradient(135deg, #ef4444, #f59e0b); }
+        .conv-info { flex: 1; }
+        .conv-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .conv-header h3 { font-size: 16px; }
+        .conv-date { font-size: 13px; color: #6b7280; }
+        .conv-participants { font-size: 13px; color: #9ca3af; margin-bottom: 8px; }
+        .conv-last-message { font-size: 14px; color: #374151; margin-bottom: 8px; }
+        .conv-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+        .conv-actions { display: flex; gap: 8px; align-items: center; }
+        .btn-icon { width: 40px; height: 40px; border: none; background: #f3f4f6; border-radius: 8px; cursor: pointer; font-size: 20px; transition: all 0.2s; }
+        .btn-icon:hover { background: #8b5cf6; transform: scale(1.1); }
+        .badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; background: #f3f4f6; color: #374151; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal.show { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; border-radius: 16px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-large { max-width: 900px; }
+        .modal-header { padding: 24px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+        .btn-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280; }
+        .conversation-details { padding: 24px; }
+        .conv-detail-header { margin-bottom: 24px; }
+        .conv-detail-info p { margin-bottom: 8px; }
+        .conv-detail-messages, .conv-detail-files { margin-bottom: 24px; }
+        .conv-detail-messages h3, .conv-detail-files h3 { margin-bottom: 16px; font-size: 16px; }
+        .message { background: #f9fafb; padding: 12px 16px; border-radius: 8px; margin-bottom: 12px; }
+        .message-author { font-weight: 600; margin-bottom: 4px; font-size: 14px; }
+        .message-content { margin-bottom: 4px; }
+        .message-time { font-size: 12px; color: #6b7280; }
+        .file-list { display: flex; flex-direction: column; gap: 8px; }
+        .file-item { padding: 12px; background: #f9fafb; border-radius: 8px; }
+        .conv-detail-actions { display: flex; gap: 12px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+        .btn-primary { background: #8b5cf6; color: white; }
+        .btn-primary:hover { background: #7c3aed; }
+        .btn-secondary { background: #f3f4f6; color: #374151; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #6b7280; }
+    </style>
+</body>
+</html>

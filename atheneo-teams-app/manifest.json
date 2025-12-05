@@ -1,0 +1,122 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "1.0.0",
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "packageName": "com.atheneo.teamsapp",
+  "developer": {
+    "name": "ATHENEO",
+    "websiteUrl": "https://atheneo.fr",
+    "privacyUrl": "https://atheneo.fr/privacy",
+    "termsOfUseUrl": "https://atheneo.fr/terms"
+  },
+  "icons": {
+    "color": "assets/icon-color.png",
+    "outline": "assets/icon-outline.png"
+  },
+  "name": {
+    "short": "ATHENEO",
+    "full": "ATHENEO - Gestion CRM intégrée"
+  },
+  "description": {
+    "short": "Gérez vos contacts, documents et interactions ATHENEO depuis Teams",
+    "full": "Application ATHENEO pour Microsoft Teams permettant de gérer vos interlocuteurs, documents, conversations et actions directement depuis votre espace de travail Teams. Synchronisation bidirectionnelle avec votre ERP ATHENEO."
+  },
+  "accentColor": "#8b5cf6",
+  "configurableTabs": [],
+  "staticTabs": [
+    {
+      "entityId": "atheneo-dashboard",
+      "name": "Tableau de bord",
+      "contentUrl": "https://atheneo-teams.vercel.app/tabs/index.html",
+      "websiteUrl": "https://atheneo-teams.vercel.app/tabs/index.html",
+      "scopes": ["personal"]
+    },
+    {
+      "entityId": "atheneo-contacts",
+      "name": "Contacts",
+      "contentUrl": "https://atheneo-teams.vercel.app/tabs/contacts.html",
+      "websiteUrl": "https://atheneo-teams.vercel.app/tabs/contacts.html",
+      "scopes": ["personal"]
+    },
+    {
+      "entityId": "atheneo-documents",
+      "name": "Documents",
+      "contentUrl": "https://atheneo-teams.vercel.app/tabs/documents.html",
+      "websiteUrl": "https://atheneo-teams.vercel.app/tabs/documents.html",
+      "scopes": ["personal"]
+    },
+    {
+      "entityId": "atheneo-conversations",
+      "name": "Conversations",
+      "contentUrl": "https://atheneo-teams.vercel.app/tabs/conversations.html",
+      "websiteUrl": "https://atheneo-teams.vercel.app/tabs/conversations.html",
+      "scopes": ["personal"]
+    }
+  ],
+  "bots": [],
+  "connectors": [],
+  "composeExtensions": [
+    {
+      "botId": "00000000-0000-0000-0000-000000000000",
+      "commands": [
+        {
+          "id": "searchContacts",
+          "type": "query",
+          "title": "Rechercher un contact",
+          "description": "Rechercher un contact ATHENEO",
+          "initialRun": false,
+          "fetchTask": false,
+          "context": ["compose", "commandBox"],
+          "parameters": [
+            {
+              "name": "searchQuery",
+              "title": "Nom ou email",
+              "description": "Rechercher par nom ou email",
+              "inputType": "text"
+            }
+          ]
+        },
+        {
+          "id": "searchDocuments",
+          "type": "query",
+          "title": "Rechercher un document",
+          "description": "Rechercher un document ATHENEO",
+          "initialRun": false,
+          "fetchTask": false,
+          "context": ["compose", "commandBox"],
+          "parameters": [
+            {
+              "name": "searchQuery",
+              "title": "Nom du document",
+              "description": "Rechercher par nom de fichier",
+              "inputType": "text"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "validDomains": [
+    "atheneo-teams.vercel.app",
+    "api-demo-production-8637.up.railway.app"
+  ],
+  "webApplicationInfo": {
+    "id": "00000000-0000-0000-0000-000000000000",
+    "resource": "https://atheneo-teams.vercel.app"
+  },
+  "authorization": {
+    "permissions": {
+      "resourceSpecific": [
+        {
+          "name": "TeamsActivity.Send.User",
+          "type": "Application"
+        }
+      ]
+    }
+  }
+}

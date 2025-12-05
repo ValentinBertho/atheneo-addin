@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATHENEO - Documents</title>
+    <script src="https://res.cdn.office.net/teams-js/2.19.0/js/MicrosoftTeams.min.js" crossorigin="anonymous"></script>
+    <script src="../config.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <div class="header-top">
+                <h1>📄 Gestion des Documents</h1>
+                <button class="btn btn-primary" onclick="openUploadModal()">
+                    📤 Télécharger un document
+                </button>
+            </div>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="🔍 Rechercher un document..." oninput="searchDocuments()">
+                <select id="filterType" onchange="applyFilters()">
+                    <option value="">Tous les types</option>
+                    <option value="contrat">Contrat</option>
+                    <option value="facture">Facture</option>
+                    <option value="devis">Devis</option>
+                    <option value="presentation">Présentation</option>
+                    <option value="rapport">Rapport</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="documents-grid" id="documentsList"></div>
+
+        <!-- Modal upload -->
+        <div class="modal" id="uploadModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>📤 Télécharger un document</h2>
+                    <button class="btn-close" onclick="closeUploadModal()">✕</button>
+                </div>
+                <form id="uploadForm" onsubmit="uploadDocument(event)">
+                    <div style="padding: 24px;">
+                        <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+                            <input type="file" id="fileInput" style="display:none" onchange="handleFileSelect(event)">
+                            <p>📁 Cliquez pour sélectionner ou glissez-déposez</p>
+                            <p class="upload-hint">Max 25 MB - PDF, Word, Excel, PowerPoint, Images</p>
+                            <div id="selectedFile" class="selected-file"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Type de document *</label>
+                            <select id="docType" required>
+                                <option value="contrat">Contrat</option>
+                                <option value="facture">Facture</option>
+                                <option value="devis">Devis</option>
+                                <option value="presentation">Présentation</option>
+                                <option value="rapport">Rapport</option>
+                                <option value="autre">Autre</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Catégorie</label>
+                            <select id="docCategory">
+                                <option value="commercial">Commercial</option>
+                                <option value="technique">Technique</option>
+                                <option value="juridique">Juridique</option>
+                                <option value="financier">Financier</option>
+                                <option value="rh">RH</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Confidentialité</label>
+                            <select id="docConfidentiality">
+                                <option value="public">Public</option>
+                                <option value="interne">Interne</option>
+                                <option value="confidentiel">Confidentiel</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="docDescription" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeUploadModal()">Annuler</button>
+                        <button type="submit" class="btn btn-primary">Télécharger</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let documents = [];
+        let filteredDocuments = [];
+
+        microsoftTeams.app.initialize().then(() => {
+            loadDocuments();
+        });
+
+        async function loadDocuments() {
+            documents = [
+                {id: 1, nom: 'Contrat_TechCorp_2025.pdf', type: 'contrat', categorie: 'juridique', taille: 2457600, date: '2025-01-20', confidentialite: 'confidentiel'},
+                {id: 2, nom: 'Facture_Jan_2025.pdf', type: 'facture', categorie: 'financier', taille: 524288, date: '2025-01-25', confidentialite: 'interne'},
+                {id: 3, nom: 'Presentation_Produit.pptx', type: 'presentation', categorie: 'commercial', taille: 8388608, date: '2025-01-15', confidentialite: 'public'},
+                {id: 4, nom: 'Devis_2025_001.xlsx', type: 'devis', categorie: 'commercial', taille: 1048576, date: '2025-01-18', confidentialite: 'confidentiel'},
+                {id: 5, nom: 'Rapport_Mensuel.docx', type: 'rapport', categorie: 'technique', taille: 3145728, date: '2025-01-22', confidentialite: 'interne'}
+            ];
+            filteredDocuments = [...documents];
+            renderDocuments();
+        }
+
+        function renderDocuments() {
+            const list = document.getElementById('documentsList');
+            if (filteredDocuments.length === 0) {
+                list.innerHTML = '<div class="empty-state"><p>Aucun document trouvé</p></div>';
+                return;
+            }
+            list.innerHTML = filteredDocuments.map(doc => `
+                <div class="document-card">
+                    <div class="document-icon">${getDocIcon(doc.type)}</div>
+                    <div class="document-info">
+                        <h3>${doc.nom}</h3>
+                        <div class="document-meta">
+                            <span class="badge badge-${doc.type}">${doc.type}</span>
+                            <span class="badge badge-${doc.confidentialite}">${doc.confidentialite}</span>
+                            <span class="doc-size">${formatFileSize(doc.taille)}</span>
+                            <span class="doc-date">${formatDate(doc.date)}</span>
+                        </div>
+                    </div>
+                    <div class="document-actions">
+                        <button class="btn-icon" onclick="previewDocument(${doc.id})" title="Prévisualiser">👁️</button>
+                        <button class="btn-icon" onclick="downloadDocument(${doc.id})" title="Télécharger">⬇️</button>
+                        <button class="btn-icon" onclick="shareDocument(${doc.id})" title="Partager">🔗</button>
+                        <button class="btn-icon" onclick="deleteDocument(${doc.id})" title="Supprimer">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getDocIcon(type) {
+            const icons = {
+                contrat: '📄', facture: '🧾', devis: '📋',
+                presentation: '📊', rapport: '📑', autre: '📎'
+            };
+            return icons[type] || '📄';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('fr-FR');
+        }
+
+        function searchDocuments() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            filteredDocuments = documents.filter(d =>
+                d.nom.toLowerCase().includes(query)
+            );
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const type = document.getElementById('filterType').value;
+            let result = [...filteredDocuments];
+            if (type) result = result.filter(d => d.type === type);
+            filteredDocuments = result;
+            renderDocuments();
+        }
+
+        function openUploadModal() {
+            document.getElementById('uploadModal').classList.add('show');
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.remove('show');
+            document.getElementById('uploadForm').reset();
+            document.getElementById('selectedFile').innerHTML = '';
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const maxSize = 26214400; // 25 MB
+                if (file.size > maxSize) {
+                    alert('Fichier trop volumineux (max 25 MB)');
+                    return;
+                }
+                document.getElementById('selectedFile').innerHTML = `
+                    <div class="file-info">
+                        <span>📄 ${file.name}</span>
+                        <span>${formatFileSize(file.size)}</span>
+                    </div>
+                `;
+            }
+        }
+
+        async function uploadDocument(event) {
+            event.preventDefault();
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files[0]) {
+                alert('Veuillez sélectionner un fichier');
+                return;
+            }
+
+            const newDoc = {
+                id: documents.length + 1,
+                nom: fileInput.files[0].name,
+                type: document.getElementById('docType').value,
+                categorie: document.getElementById('docCategory').value,
+                confidentialite: document.getElementById('docConfidentiality').value,
+                taille: fileInput.files[0].size,
+                date: new Date().toISOString().split('T')[0]
+            };
+
+            documents.unshift(newDoc);
+            filteredDocuments = [...documents];
+            renderDocuments();
+            closeUploadModal();
+            microsoftTeams.app.notifySuccess();
+        }
+
+        function previewDocument(id) {
+            alert('Prévisualisation du document ' + id);
+        }
+
+        function downloadDocument(id) {
+            alert('Téléchargement du document ' + id);
+        }
+
+        function shareDocument(id) {
+            const doc = documents.find(d => d.id === id);
+            if (doc) {
+                microsoftTeams.dialog.url.open({
+                    url: `https://atheneo-teams.vercel.app/share?doc=${id}`,
+                    size: { height: 400, width: 600 },
+                    title: 'Partager le document'
+                });
+            }
+        }
+
+        function deleteDocument(id) {
+            if (confirm('Supprimer ce document ?')) {
+                documents = documents.filter(d => d.id !== id);
+                filteredDocuments = [...documents];
+                renderDocuments();
+            }
+        }
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; padding: 24px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .page-header { background: white; padding: 24px; border-radius: 12px; margin-bottom: 24px; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .header-top h1 { font-size: 24px; }
+        .search-bar { display: flex; gap: 12px; }
+        .search-bar input { flex: 1; padding: 12px 16px; border: 1px solid #d1d5db; border-radius: 8px; }
+        .search-bar select { padding: 12px 16px; border: 1px solid #d1d5db; border-radius: 8px; }
+        .documents-grid { display: grid; gap: 16px; }
+        .document-card { background: white; border-radius: 12px; padding: 20px; border: 1px solid #e5e7eb; display: flex; gap: 16px; align-items: center; transition: all 0.2s; }
+        .document-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-2px); }
+        .document-icon { width: 60px; height: 60px; border-radius: 12px; background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; display: flex; align-items: center; justify-content: center; font-size: 32px; flex-shrink: 0; }
+        .document-info { flex: 1; }
+        .document-info h3 { margin: 0 0 8px 0; font-size: 16px; }
+        .document-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .document-actions { display: flex; gap: 8px; }
+        .btn-icon { width: 40px; height: 40px; border: none; background: #f3f4f6; border-radius: 8px; cursor: pointer; font-size: 20px; transition: all 0.2s; }
+        .btn-icon:hover { background: #8b5cf6; transform: scale(1.1); }
+        .badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+        .badge-contrat { background: #dbeafe; color: #1e40af; }
+        .badge-facture { background: #fef3c7; color: #92400e; }
+        .badge-public { background: #d1fae5; color: #065f46; }
+        .badge-confidentiel { background: #fee2e2; color: #991b1b; }
+        .doc-size, .doc-date { font-size: 13px; color: #6b7280; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+        .btn-primary { background: #8b5cf6; color: white; }
+        .btn-primary:hover { background: #7c3aed; }
+        .btn-secondary { background: #f3f4f6; color: #374151; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal.show { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; border-radius: 16px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { padding: 24px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+        .modal-footer { padding: 24px; border-top: 1px solid #e5e7eb; display: flex; gap: 12px; justify-content: flex-end; }
+        .upload-zone { border: 2px dashed #d1d5db; border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 24px; }
+        .upload-zone:hover { border-color: #8b5cf6; background: #f9fafb; }
+        .upload-hint { font-size: 13px; color: #6b7280; margin-top: 8px; }
+        .selected-file { margin-top: 16px; }
+        .file-info { display: flex; justify-content: space-between; padding: 12px; background: #f3f4f6; border-radius: 8px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+        .form-group label { font-weight: 500; font-size: 14px; }
+        .form-group input, .form-group select, .form-group textarea { padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; }
+        .btn-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280; }
+    </style>
+</body>
+</html>
